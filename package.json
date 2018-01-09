@@ -1,0 +1,58 @@
+{
+  "name": "vkoairportbot",
+  "version": "0.0.1",
+  "description": "group stats",
+  "keywords": [
+    "telegram",
+    "vnukovo",
+    "vko"
+  ],
+  "main": "dist/server.js",
+  "scripts": {
+    "start": "nodemon --trace-deprecation src/server.js --exec babel-node",
+    "debug": "node src/server.js",
+    "build": "export NODE_ENV=production&& babel --ignore node_modules,storage src -d dist",
+    "serve": "export NODE_ENV=production&& node dist/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thebix/vkoairportbot.git"
+  },
+  "author": "Pavel Biriukov",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/thebix/vkoairportbot/issues"
+  },
+  "homepage": "https://github.com/thebix/vkoairportbot#readme",
+  "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-preset-env": "1.6.1",
+    "babel-preset-stage-2": "^6.18.0",
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb": "^15.0.1",
+    "eslint-config-airbnb-base": "^11.2.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "5.1.1",
+    "eslint-plugin-react": "^7.0.1",
+    "nodemon": "^1.11.0"
+  },
+  "dependencies": {
+    "jsonfile": "^2.4.0",
+    "node-telegram-bot-api": "0.30.0",
+    "babel-register": "^6.18.0",
+    "rxjs": "5.5.6",
+    "rwlock": "5.0.0"
+  },
+  "private": true,
+  "engines": {
+    "node": ">= 0.6.0",
+    "npm": ">= 1.0.0"
+  },
+  "babel": {
+    "presets": [
+      "env"
+    ],
+    "sourceMaps": true,
+    "retainLines": true
+  }
+}
