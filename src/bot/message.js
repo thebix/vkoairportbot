@@ -47,11 +47,12 @@ export class CallbackQuery {
     }
 }
 
+// INFO: should be refactored to something like HandlerResponse which contains fields: messageToUser and newCommandState
 export class MessageToUser {
-    constructor(userId, chatId, text = '', attachments = []) {
+    constructor(userId, chatId, text = '', newCommandState) {
         this.userId = userId
         this.chatId = chatId
         this.text = text
-        this.attachments = attachments
+        this.newCommandState = newCommandState
     }
 }
