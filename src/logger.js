@@ -6,7 +6,8 @@ export const logLevel = {
     DEBUG: 'DEBUG'
 }
 
-export const dateTimeString = (date = new Date()) => `${date.toLocaleDateString()} ${`0${date.getHours()}`.slice(-2)}:${`0${date.getMinutes()}`.slice(-2)}:${`0${date.getSeconds()}`.slice(-2)}`
+export const dateTimeString = (date = new Date()) =>
+    `${date.toLocaleDateString()} ${`0${date.getHours()}`.slice(-2)}:${`0${date.getMinutes()}`.slice(-2)}:${`0${date.getSeconds()}`.slice(-2)}`
 
 export const log = (text, level = logLevel.DEBUG) => {
     if (!text) return

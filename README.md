@@ -1,12 +1,11 @@
-# yenombot
+# Vko airport bot
 
 ## prepare env
 ```
 npm install
-cd src
-touch ./src/token.js
+vi ./src/token.js
 ```
-
+### token.js file body:
 ``` javascript
 export default {
     botToken: {
@@ -21,9 +20,8 @@ export default {
     initData: {
         ['some-init-token']: {}
     }
-     
 }
-
+```
 ## prod
 ```
 npm install
@@ -34,5 +32,5 @@ npm run serve
 ## start bot
 ```
 /start
-/token some-fucking-init-token
+/token some-init-token
 ```

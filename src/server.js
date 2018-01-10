@@ -1,4 +1,7 @@
 import { log, logLevel } from './logger'
-import _config from './config'
+import config from './config'
+import startVkoBot from './bot/vkoBot'
 
-log(`Start server ${_config.isProduction ? '<Production>' : '<Debug>'}`, logLevel.INFO)
+log(`Start VkoAirportBot server, environment: ${config.isProduction ? '<Production>' : '<Debug>'}`, logLevel.INFO)
+
+startVkoBot()
