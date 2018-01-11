@@ -36,14 +36,12 @@ export default class Telegram {
     messageToUser({ chatId, text, inlineButtons }) {
         const options = { reply_markup: {} }
         if (inlineButtons && Array.isArray(inlineButtons)) {
-            options.reply_markup.inline_keyboard = [
-                inlineButtons.map(item => {
-                    return {
-                        text: item.text,
-                        callback_data: item.callbackData
-                    }
-                })
-            ]
+            options.reply_markup.inline_keyboard =
+                inlineButtons.map(item => [{
+                    text: item.text,
+                    callback_data: JSON.stringify(item.callbackData)
+                }])
+
         }
         return Observable.fromPromise(this.bot.sendMessage(chatId, text, options))
     }

@@ -62,10 +62,8 @@ const flightCheckFlightOrCityEntered = (userId, chatId, text) => {
                     if (updateStorageResult) {
                         lastCommands[`${userId}${chatId}`] = commands.FLIGHT_CHECK_FOUND_BY_CITY
                         const flights = flightsByCity
-                            .map(item => `№ ${item.id}, гейт: ${item.gate}`)
-                            .join('\n')
-                        // TODO: add logic for user selection from all availavble flights
-                        return [new MessageToUser(userId, chatId, 'Найдены рейсы:'), new MessageToUser(userId, chatId, flights)]
+                            .map(flight => new InlineButton(`${flight.id}, гейт: ${flight.gate}`, { flightId: flight.id }))
+                        return [new MessageToUser(userId, chatId, 'Найдены рейсы, выберите Ваш', flights)]
                     }
                     log(`handlers: update userFlights or user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
                     return errorToUser(userId, chatId)
