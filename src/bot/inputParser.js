@@ -24,7 +24,8 @@ export default class InputParser {
         return text.match(pattern)
     }
     static isFlightCheckStart(text) {
-        const pattern = /^\/flight|рейс/i
+        // TODO: remove |йцу|qwe
+        const pattern = /^\/flight|рейс|йцу|qwe/i
         return text.match(pattern)
     }
     static isFlightCheckFlightOrCityEntered(text, prevCommand) {
