@@ -28,7 +28,15 @@ export default class InputParser {
         const pattern = /^\/flight|рейс|йцу|qwe/i
         return text.match(pattern)
     }
+    // TODO: 'text' not needed, remove
     static isFlightCheckFlightOrCityEntered(text, prevCommand) {
         return prevCommand === commands.FLIGHT_CHECK_START
+    }
+
+    /*
+     * CallbackQueries
+     */
+    static isFlightCheckFoundFromMany(prevCommand) {
+        return prevCommand === commands.FLIGHT_CHECK_FOUND_MANY_BY_CITY
     }
 }

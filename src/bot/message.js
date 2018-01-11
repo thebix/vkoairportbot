@@ -1,8 +1,8 @@
 // https://core.telegram.org/bots/api#user
 
 /*
-    FROM USER
-*/
+ *   FROM USER
+ */
 export default class Message {
     constructor(msg) {
         this.id = msg.id
@@ -34,26 +34,50 @@ export default class Message {
             }
         }
     }
+    static mapTelegramCallbackQueryToMessage(callbackQuery) {
+        // INFO: message.user = bot, from = user
+        const { message, from } = callbackQuery
+        return {
+            id: message.message_id,
+            from: from.id,
+            text: message.text,
+            user: {
+                id: from.id,
+                firstName: from.first_name,
+                lastName: from.last_name,
+                username: from.username
+            },
+            chat: {
+                id: message.chat.id,
+                type: message.chat.type,
+                title: message.chat.title,
+                username: message.chat.username,
+                firstName: message.chat.first_name,
+                lastName: message.chat.last_name,
+                allMembersAdmins: !!message.chat.all_members_are_administrators
+            }
+        }
+    }
 }
 
 export class CallbackQuery {
     constructor({ data, message }) {
         this.data = data
-        this.from = message
+        this.message = message
     }
 
     static mapTelegramCallbackQuery(callbackQuery) {
         const { data, message } = callbackQuery
         return {
             data: data ? JSON.parse(data) : {},
-            message: new Message(Message.mapTelegramMessage(message))
+            message: new Message(Message.mapTelegramCallbackQueryToMessage(callbackQuery))
         }
     }
 }
 
 /*
-    TO USER
-*/
+ *  TO USER
+ */
 export class InlineButton {
     constructor(text, callbackData) {
         this.text = text

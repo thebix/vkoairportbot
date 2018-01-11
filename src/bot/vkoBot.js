@@ -2,26 +2,39 @@ import { log, logLevel } from '../logger'
 import config from '../config'
 import token from '../token'
 import Telegram from './telegram'
-import mapMessageToHandler from './handlers'
+import mapMessageToHandler, { mapCallbackQueryToHandler } from './handlers'
 
 const startVkoBot = () => {
     log('vkoBot.startVkoBot()', logLevel.DEBUG)
 
     log('starting Telegram bot', logLevel.DEBUG)
     const telegram = new Telegram(config.isProduction ? token.botToken.prod : token.botToken.dev)
-    // add to composite subscription and do proper unsubscribe
+    // TODO: add to composite subscription and do proper unsubscribe
     telegram.userText()
         // TODO: proper observeOn / subscribeOn
         // .observeOn(Scheduler.async)
         // .subscribeOn(Scheduler.async)
         .mergeMap(mapMessageToHandler)
-        .map(message => telegram.messageToUser(message))
-        // TODO: handle errors and etc
-        .subscribe()
+        .map(message => {
+            return telegram.messageToUser(message)
+        })
+        // TODO: handle complete if needed
+        .subscribe(() => { },
+        error => log(`startVkoBot: error while handling userText. Error=${JSON.stringify(error)}`))
 
-    telegram.userBackAction().subscribe(callbackQuery => {
-        log('vkoBot: Callback query received', logLevel.DEBUG)
-    })
+    // TODO: add to composite subscription and do proper unsubscribe
+    telegram.userBackAction()
+        // TODO: proper observeOn / subscribeOn
+        // .observeOn(Scheduler.async)
+        // .subscribeOn(Scheduler.async)
+        .mergeMap(mapCallbackQueryToHandler)
+        .map(message => {
+            return telegram.messageToUser(message)
+        })
+
+        // TODO: handle complete if needed
+        .subscribe(() => { },
+        error => log(`startVkoBot: error while handling userBackAction. Error=${JSON.stringify(error)}`))
     telegram.start()
 }
 

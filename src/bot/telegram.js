@@ -14,16 +14,18 @@ export default class Telegram {
         this.userTextSubject = new Subject()
         this.userBackActionSubject = new Subject()
     }
+    // TODO: ?move start() content to constructor. bot will emit items on subscription?
     start() {
         log('Telegram.start()', logLevel.DEBUG)
         if (!this.bot) {
-            log('Telegram: Bot hasn\'t initialized yet', logLevel.ERROR)
+            log('Telegram: Bot does\'t initialized yet', logLevel.ERROR)
             return
         }
         this.bot.on('text', msg => {
             this.userTextSubject.next(new Message(Message.mapTelegramMessage(msg)))
         })
         this.bot.on('callback_query', callbackQuery => {
+            this.bot.answerCallbackQuery(callbackQuery.id, 'Команда получена', false);
             this.userBackActionSubject.next(new CallbackQuery(CallbackQuery.mapTelegramCallbackQuery(callbackQuery)))
         });
     }
