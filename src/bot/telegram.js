@@ -24,7 +24,7 @@ export default class Telegram {
             this.userTextSubject.next(new Message(Message.mapTelegramMessage(msg)))
         })
         this.bot.on('callback_query', callbackQuery => {
-            this.userBackActionSubject.next(new CallbackQuery(CallbackQuery.mapTelegramallbackQuery(callbackQuery)))
+            this.userBackActionSubject.next(new CallbackQuery(CallbackQuery.mapTelegramCallbackQuery(callbackQuery)))
         });
     }
     userText() {
@@ -33,7 +33,18 @@ export default class Telegram {
     userBackAction() {
         return this.userBackActionSubject.asObservable()
     }
-    messageToUser({ chatId, text }) {
-        return Observable.fromPromise(this.bot.sendMessage(chatId, text))
+    messageToUser({ chatId, text, inlineButtons }) {
+        const options = { reply_markup: {} }
+        if (inlineButtons && Array.isArray(inlineButtons)) {
+            options.reply_markup.inline_keyboard = [
+                inlineButtons.map(item => {
+                    return {
+                        text: item.text,
+                        callback_data: item.callbackData
+                    }
+                })
+            ]
+        }
+        return Observable.fromPromise(this.bot.sendMessage(chatId, text, options))
     }
 }

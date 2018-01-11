@@ -4,7 +4,7 @@
 */
 
 import { Observable } from 'rxjs/Observable'
-import { MessageToUser } from './message'
+import { MessageToUser, InlineButton } from './message'
 import commands from './commands'
 import storage from '../storage'
 import { log, logLevel } from '../logger'
@@ -26,6 +26,7 @@ const errorToUser = (userId, chatId) => {
 const help = (userId, chatId) => {
     lastCommands[`${userId}${chatId}`] = commands.HELP
     // TODO: save the last command in storage
+
     return Observable.from([new MessageToUser(userId, chatId,
         'Помощь\nЗдесь вы можете узнать актуальное расписание вылета самолетов')])
 }
@@ -81,7 +82,7 @@ const flightCheckFlightOrCityEntered = (userId, chatId, text) => {
                 if (updateStorageResult) {
                     lastCommands[`${userId}${chatId}`] = commands.FLIGHT_CHECK_FLIGHT_FOUND
                     userFlights[`${userId}${chatId}`] = currentUserFlights
-                    return [new MessageToUser(userId, chatId, 'Ваш рейс найден')]
+                    return [new MessageToUser(userId, chatId, `Ваш рейс найден\n№ ${flight.id}, гейт: ${flight.gate}`)]
                 }
                 log(`handlers: update userFlights or user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
                 return errorToUser(userId, chatId)

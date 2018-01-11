@@ -1,4 +1,8 @@
 // https://core.telegram.org/bots/api#user
+
+/*
+    FROM USER
+*/
 export default class Message {
     constructor(msg) {
         this.id = msg.id
@@ -42,15 +46,27 @@ export class CallbackQuery {
         const { data, message } = callbackQuery
         return {
             data: data ? JSON.parse(data) : {},
-            message: new Message(Message.mapTelegramallbackQuery(message))
+            message: new Message(Message.mapTelegramMessage(message))
         }
     }
 }
 
+/*
+    TO USER
+*/
+export class InlineButton {
+    constructor(text, callbackData) {
+        this.text = text
+        this.callbackData = callbackData
+    }
+}
+
+
 export class MessageToUser {
-    constructor(userId, chatId, text = '') {
+    constructor(userId, chatId, text = '', inlineButtons = []) {
         this.userId = userId
         this.chatId = chatId
         this.text = text
+        this.inlineButtons = inlineButtons
     }
 }
