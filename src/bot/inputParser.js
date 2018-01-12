@@ -40,7 +40,8 @@ export default class InputParser {
         return command === commands.FLIGHT_CHECK_FOUND_FROM_MANY
             || command === commands.FLIGHT_CHECK_FOUND_BY_FLIGHT
     }
-    static isFlightSubscribed(command) {
+    static isFlightSubscriptionToggle(command) {
         return command === commands.FLIGHT_SUBSCRIBED
+            || command === commands.FLIGHT_UNSUBSCRIBED
     }
 }

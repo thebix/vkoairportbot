@@ -141,8 +141,8 @@ const flightCheckFoundFromMany = (userId, chatId, data, editMessageId) => {
     return [new MessageToUser(userId, chatId,
         'При выборе рейса возникла проблема. Пожалуйста, начните с начала')]
 }
-const flightSubscribed = (userId, chatId, data, subscribeButtomMessageId) => {
-    log(`handlers.flightSubscribed(userId=${userId}, chatId=${chatId}, data='${JSON.stringify(data)}'), subscribeButtomMessageId=${subscribeButtomMessageId}`, logLevel.DEBUG)
+const flightSubscriptionToggle = (userId, chatId, data, buttonMessageId) => {
+    log(`handlers.flightSubscriptionToggle(userId=${userId}, chatId=${chatId}, data='${JSON.stringify(data)}'), buttonMessageId=${buttonMessageId}`, logLevel.DEBUG)
     let { flightId = '' } = data
 
     // check by flight id
@@ -150,34 +150,39 @@ const flightSubscribed = (userId, chatId, data, subscribeButtomMessageId) => {
     const flightsById = token.flights.filter(item => item.id.replace(/\s/g, '').toLowerCase() === flightId)
 
     if (flightsById && flightsById.length > 0) {
-        // return sendFoundFlightToUser(userId, chatId, commands.FLIGHT_CHECK_FOUND_FROM_MANY, flightsById[0], editMessageId)
         const flight = flightsById[0]
         const currentUserFlights = Object.assign({}, userFlights[`${userId}${chatId}`])
-        currentUserFlights[flight.id] = flight
-        const command = commands.FLIGHT_SUBSCRIBED
+        const isUserSubscribes = !currentUserFlights[flight.id]
+        const command = isUserSubscribes ? commands.FLIGHT_SUBSCRIBED : commands.FLIGHT_UNSUBSCRIBED
         return storage.updateItems(`${userId}${chatId}`, [
             { fieldName: 'lastCommand', item: command },
             { fieldName: 'userFlights', item: currentUserFlights }])
             .mergeMap(updateStorageResult => {
                 if (updateStorageResult) {
+                    if (isUserSubscribes)
+                        currentUserFlights[flight.id] = flight
+                    else
+                        delete currentUserFlights[flight.id]
                     lastCommands[`${userId}${chatId}`] = command
                     userFlights[`${userId}${chatId}`] = currentUserFlights
 
-                    const buttonUnsubscribeFlight = new InlineButton(`Отписаться от рейса ${flight.id}`, { flightId: flight.id, cmd: commands.FLIGHT_UNSUBSCRIBED })
-                    const text = `Вы подписаны на рейс\n${getFlightDetailsText(flight)}`
-                    if (subscribeButtomMessageId)
-                        return [new MessageToUserEdit(subscribeButtomMessageId, chatId, text, [buttonUnsubscribeFlight])]
+                    const buttonToggleSubscriptionText = isUserSubscribes ? `Отписаться от рейса ${flight.id}` : `Подписаться на рейс ${flight.id}`
+                    const buttonToggleSubscriptionCmd = isUserSubscribes ? commands.FLIGHT_UNSUBSCRIBED : commands.FLIGHT_SUBSCRIBED
+                    const buttonToggleSubscription = new InlineButton(buttonToggleSubscriptionText, { flightId: flight.id, cmd: buttonToggleSubscriptionCmd })
+                    const text = isUserSubscribes ? `Вы подписаны на рейс\n${getFlightDetailsText(flight)}` : `Найденный рейс\n${getFlightDetailsText(flight)}`
+                    if (buttonMessageId)
+                        return [new MessageToUserEdit(buttonMessageId, chatId, text, [buttonToggleSubscription])]
                     return [new MessageToUser(userId, chatId, text,
-                        [buttonUnsubscribeFlight])]
+                        [buttonToggleSubscription])]
                 }
-                log(`handlers: update userFlights or user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
+                log(`handlers.flightSubscriptionToggle: update userFlights or user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
                 return errorToUser(userId, chatId)
             })
     }
     lastCommands[`${userId}${chatId}`] = commands.ERROR
-    log(`handlers.flightSubscribed: user can't subscribe to concrete flight which was found previously. UserId=${userId}, chatId=${chatId}, flightId=${flightId}`, logLevel.ERROR)
+    log(`handlers.flightSubscriptionToggle: user can't toggle subscription to concrete flight which was found previously. UserId=${userId}, chatId=${chatId}, flightId=${flightId}`, logLevel.ERROR)
     return [new MessageToUser(userId, chatId,
-        'При подписке на рейс возникла проблема. Пожалуйста, начните с начала')]
+        'При изменении подписки на рейс возникла проблема. Пожалуйста, начните с начала')]
 }
 
 /*
@@ -206,11 +211,10 @@ export const mapCallbackQueryToHandler = callbackQuery => {
     const { message, data = {} } = callbackQuery
     const { from, chat, id } = message
     const chatId = chat ? chat.id : from
-    // const lastCommand = lastCommands[`${from}${chatId}`]
     const callbackCommand = data.cmd || undefined
     let messagesToUser
-    if (InputParser.isFlightSubscribed(callbackCommand)) {
-        messagesToUser = flightSubscribed(from, chatId, data, id)
+    if (InputParser.isFlightSubscriptionToggle(callbackCommand)) {
+        messagesToUser = flightSubscriptionToggle(from, chatId, data, id)
     } else if (InputParser.isFlightCheckFoundFromMany(callbackCommand)) {
         messagesToUser = flightCheckFoundFromMany(from, chatId, data, id)
     } else {
