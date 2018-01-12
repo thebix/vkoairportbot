@@ -36,7 +36,11 @@ export default class InputParser {
     /*
      * CallbackQueries
      */
-    static isFlightCheckFoundFromMany(prevCommand) {
-        return prevCommand === commands.FLIGHT_CHECK_FOUND_MANY_BY_CITY
+    static isFlightCheckFoundFromMany(command) {
+        return command === commands.FLIGHT_CHECK_FOUND_FROM_MANY
+            || command === commands.FLIGHT_CHECK_FOUND_BY_FLIGHT
+    }
+    static isFlightSubscribed(command) {
+        return command === commands.FLIGHT_SUBSCRIBED
     }
 }
