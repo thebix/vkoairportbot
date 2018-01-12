@@ -60,6 +60,7 @@ export default class Message {
     }
 }
 
+// TODO: ?rename to userActions?
 export class CallbackQuery {
     constructor({ data, message }) {
         this.data = data
@@ -85,12 +86,25 @@ export class InlineButton {
     }
 }
 
-
+// send or edit message from bot to user
 export class MessageToUser {
-    constructor(userId, chatId, text = '', inlineButtons = []) {
+    // INFO: userId, chatId, text - reqired params
+    constructor(userId,
+        chatId,
+        text = '',
+        inlineButtons = undefined) {
+        // TODO: add checks userId, chatId, text isNotBlank()
         this.userId = userId
         this.chatId = chatId
         this.text = text
         this.inlineButtons = inlineButtons
+    }
+}
+export class MessageToUserEdit extends MessageToUser {
+    // TODO: rename messangerMessageIdToEdit to messageIdToEdit
+    constructor(messangerMessageIdToEdit, chatId, text, inlineButtons) {
+        // TODO: messangerMessageIdToEdit check isNonBlank
+        super('userId_not_needed', chatId, text, inlineButtons)
+        this.messangerMessageIdToEdit = messangerMessageIdToEdit
     }
 }

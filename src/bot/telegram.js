@@ -3,6 +3,23 @@ import { Subject, Observable } from 'rxjs'
 import { log, logLevel } from '../logger'
 import Message, { CallbackQuery } from './message'
 
+const messageToUserOptions = (inlineButtons, editMessageId = undefined, editMessageChatId = undefined) => {
+    const options = {
+        message_id: editMessageId,
+        chat_id: editMessageChatId,
+        reply_markup: {}
+    }
+    if (inlineButtons && Array.isArray(inlineButtons)) {
+        options.reply_markup.inline_keyboard =
+            inlineButtons.map(item => [{
+                text: item.text,
+                callback_data: JSON.stringify(item.callbackData)
+            }])
+
+    }
+    return options
+}
+
 export default class Telegram {
     constructor(token) {
         log('Telegram.constructor()', logLevel.DEBUG)
@@ -12,7 +29,7 @@ export default class Telegram {
         }
         this.bot = new TelegramBot(token, { polling: true })
         this.userTextSubject = new Subject()
-        this.userBackActionSubject = new Subject()
+        this.userActionsSubject = new Subject()
     }
     // TODO: ?move start() content to constructor. bot will emit items on subscription?
     start() {
@@ -26,25 +43,26 @@ export default class Telegram {
         })
         this.bot.on('callback_query', callbackQuery => {
             this.bot.answerCallbackQuery(callbackQuery.id, 'Команда получена', false);
-            this.userBackActionSubject.next(new CallbackQuery(CallbackQuery.mapTelegramCallbackQuery(callbackQuery)))
-        });
+            this.userActionsSubject.next(new CallbackQuery(CallbackQuery.mapTelegramCallbackQuery(callbackQuery)))
+        })
     }
     userText() {
+        // TODO: try to do this thru Observable.fromEvent(this.bot.on('text')) or something else
         return this.userTextSubject.asObservable()
     }
-    userBackAction() {
-        return this.userBackActionSubject.asObservable()
+    userActions() {
+        // TODO: try to do this thru Observable.fromEvent(this.bot.on('callback_query')) or something else
+        return this.userActionsSubject.asObservable()
     }
+    // TODO: rename to botMessage
     messageToUser({ chatId, text, inlineButtons }) {
-        const options = { reply_markup: {} }
-        if (inlineButtons && Array.isArray(inlineButtons)) {
-            options.reply_markup.inline_keyboard =
-                inlineButtons.map(item => [{
-                    text: item.text,
-                    callback_data: JSON.stringify(item.callbackData)
-                }])
-
-        }
-        return Observable.fromPromise(this.bot.sendMessage(chatId, text, options))
+        return Observable.fromPromise(this.bot.sendMessage(chatId, text,
+            messageToUserOptions(inlineButtons)))
+    }
+    // TODO: rename to botMessageEdit
+    messageToUserEdit({ chatId, text, inlineButtons, messangerMessageIdToEdit }) {
+        // TODO: chatId, messangerMessageIdToEdit is required params - add checks isNonBlank()
+        return Observable.fromPromise(this.bot.editMessageText(text,
+            messageToUserOptions(inlineButtons, messangerMessageIdToEdit, chatId)))
     }
 }

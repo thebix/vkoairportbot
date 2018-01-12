@@ -4,7 +4,7 @@
 */
 
 import { Observable } from 'rxjs/Observable'
-import { MessageToUser, InlineButton } from './message'
+import { MessageToUser, InlineButton, MessageToUserEdit } from './message'
 import commands from './commands'
 import storage from '../storage'
 import { log, logLevel } from '../logger'
@@ -15,12 +15,11 @@ import config from '../config'
 const lastCommands = {}
 const userFlights = {}
 
-
 /************
  * COMMON METHODS
  ************/
 const updateLastCommand = (userId, chatId, command) => storage.updateItem(`${userId}${chatId}`, 'lastCommand', command)
-const sendFoundFlightToUser = (userId, chatId, command, flight) => {
+const sendFoundFlightToUser = (userId, chatId, command, flight, messageToEditId) => {
     const currentUserFlights = Object.assign({}, userFlights[`${userId}${chatId}`])
     currentUserFlights[flight.id] = flight
 
@@ -31,7 +30,12 @@ const sendFoundFlightToUser = (userId, chatId, command, flight) => {
             if (updateStorageResult) {
                 lastCommands[`${userId}${chatId}`] = command
                 userFlights[`${userId}${chatId}`] = currentUserFlights
-                return [new MessageToUser(userId, chatId, `Ваш рейс найден\n№ ${flight.id}, гейт: ${flight.gate}`)]
+                const buttonSubscribeToFlight = new InlineButton('Подписаться на оповещения', { flightId: flight.id })
+                const text = `Ваш рейс найден\n№ ${flight.id}, гейт: ${flight.gate}`
+                if (messageToEditId)
+                    return [new MessageToUserEdit(messageToEditId, chatId, text, [buttonSubscribeToFlight])]
+                return [new MessageToUser(userId, chatId, text,
+                    [buttonSubscribeToFlight])]
             }
             log(`handlers: update userFlights or user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
             return errorToUser(userId, chatId)
@@ -41,7 +45,7 @@ const sendFoundFlightToUser = (userId, chatId, command, flight) => {
 /************
  * HANDLERS
  ************/
-
+// TODO: rename handlers as InputParsers as commands
 /*
  * ERRORS
  */
@@ -56,8 +60,6 @@ const botIsInDevelopmentToUser = (userId, chatId) => {
     return Observable.from([new MessageToUser(userId, chatId,
         `В данный момент бот находится в режиме разработки. \nВаш идентификатор в мессенджере - "${userId}". Сообщите свой идентификатор по контактам в описании бота, чтобы Вас добавили в группу разработчиков`)])
 }
-
-// TODO: rename handlers as InputParsers as commands
 
 /*
  * USER COMMAND HELPERS
@@ -104,7 +106,7 @@ const flightCheckFlightOrCityEntered = (userId, chatId, text) => {
                             .map(flight => new InlineButton(`${flight.id}, гейт: ${flight.gate}`, { flightId: flight.id }))
                         return [new MessageToUser(userId, chatId, 'Найдены рейсы, выберите Ваш', flights)]
                     }
-                    log(`handlers: update userFlights or user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
+                    log(`handlers.flightCheckFlightOrCityEntered: update user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
                     return errorToUser(userId, chatId)
                 })
     }
@@ -116,12 +118,11 @@ const flightCheckFlightOrCityEntered = (userId, chatId, text) => {
         'По заданным критериям рейс не найден. Если вводили город, попробуйте ввести рейс и наоборот')]
 }
 
-
 /*
  * BOT CALLBACK_QUERY HELPERS
  */
-const flightCheckFoundFromMany = (userId, chatId, data) => {
-    log(`handlers.flightCheckFoundFromMany(userId=${userId}, chatId=${chatId}, text='${JSON.stringify(data)}')`, logLevel.DEBUG)
+const flightCheckFoundFromMany = (userId, chatId, data, editMessageId) => {
+    log(`handlers.flightCheckFoundFromMany(userId=${userId}, chatId=${chatId}, editMessageId=${editMessageId} text='${JSON.stringify(data)}')`, logLevel.DEBUG)
     let { flightId = '' } = data
 
     // check by flight id
@@ -129,7 +130,7 @@ const flightCheckFoundFromMany = (userId, chatId, data) => {
     const flightsById = token.flights.filter(item => item.id.replace(/\s/g, '').toLowerCase() === flightId)
 
     if (flightsById && flightsById.length > 0) {
-        return sendFoundFlightToUser(userId, chatId, commands.FLIGHT_CHECK_FOUND_FROM_MANY, flightsById[0])
+        return sendFoundFlightToUser(userId, chatId, commands.FLIGHT_CHECK_FOUND_FROM_MANY, flightsById[0], editMessageId)
     }
     lastCommands[`${userId}${chatId}`] = commands.ERROR
     log(`handlers.flightCheckFoundFromMany: user can't select flight from list. UserId=${userId}, chatId=${chatId}, flightId=${flightId}`, logLevel.ERROR)
@@ -161,13 +162,13 @@ const mapMessageToHandler = message => {
 
 export const mapCallbackQueryToHandler = callbackQuery => {
     const { message, data = {} } = callbackQuery
-    const { from, chat } = message
+    const { from, chat, id } = message
     const chatId = chat ? chat.id : from
     const lastCommand = lastCommands[`${from}${chatId}`]
 
     let messagesToUser
     if (InputParser.isFlightCheckFoundFromMany(lastCommand)) {
-        messagesToUser = flightCheckFoundFromMany(from, chatId, data)
+        messagesToUser = flightCheckFoundFromMany(from, chatId, data, id)
     } else
         messagesToUser = errorToUser(from, chatId)
 
