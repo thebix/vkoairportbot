@@ -7,7 +7,8 @@ import { Observable } from 'rxjs/Observable'
 import { MessageToUser, InlineButton, MessageToUserEdit } from './message'
 import commands from './commands'
 import storage from '../storage'
-import { log, logLevel } from '../logger'
+// INFO: dateTimeString should be used from special datetime class
+import { log, logLevel, dateTimeString } from '../logger'
 import token from '../token'
 import InputParser from './inputParser'
 import config from '../config'
@@ -31,7 +32,7 @@ const sendFoundFlightToUser = (userId, chatId, command, flight, messageToEditId)
                 lastCommands[`${userId}${chatId}`] = command
                 userFlights[`${userId}${chatId}`] = currentUserFlights
                 const buttonSubscribeToFlight = new InlineButton('Подписаться на оповещения', { flightId: flight.id })
-                const text = `Ваш рейс найден\n№ ${flight.id}, гейт: ${flight.gate}`
+                const text = `Рейс\n${flight.id}\n${flight.departureCity}-${flight.destinationCity}\nВремя посадки: ${dateTimeString(flight.boardingTime)}\nВремя вылета: ${dateTimeString(flight.depatureTime)}\nГейт: ${flight.gate}`
                 if (messageToEditId)
                     return [new MessageToUserEdit(messageToEditId, chatId, text, [buttonSubscribeToFlight])]
                 return [new MessageToUser(userId, chatId, text,
@@ -95,7 +96,7 @@ const flightCheckFlightOrCityEntered = (userId, chatId, text) => {
     else {
         // check by city
         const cityDestination = text.trim().toLowerCase()
-        const flightsByCity = token.flights.filter(item => item.destination.toLowerCase() === cityDestination)
+        const flightsByCity = token.flights.filter(item => item.destinationCity.toLowerCase() === cityDestination)
         if (flightsByCity && flightsByCity.length > 0)
             return updateLastCommand(userId, chatId, commands.FLIGHT_CHECK_FOUND_MANY_BY_CITY)
                 .mergeMap(updateStorageResult => {
