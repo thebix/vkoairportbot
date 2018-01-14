@@ -23,7 +23,7 @@ const userFlightsSubscribed = {}
  * COMMON METHODS
  ************/
 const updateLastCommand = (userId, chatId, command) => storage.updateItem(`${userId}${chatId}`, 'lastCommand', command)
-const getFlightDetailsText = (flight) => `${flight.id}\n${flight.departureCity}-${flight.destinationCity}\nВремя посадки: ${dateTimeString(flight.boardingTime)}\nВремя вылета: ${dateTimeString(flight.depatureTime)}\nГейт: ${flight.gate}`
+const getFlightDetailsText = (flight) => `${flight.id}\n${flight.departureCity}-${flight.destinationCity}\nВремя регистрации: ${dateTimeString(flight.registartionTime)}\nВремя посадки: ${dateTimeString(flight.boardingTime)}\nВремя вылета: ${dateTimeString(flight.depatureTime)}\nГейт: ${flight.gate}`
 const flightsInlineButtonsList = (flights = []) => flights && Array.isArray(flights)
     ? flights
         .map(flight => new InlineButton(`${flight.id}, гейт: ${flight.gate}`, {
