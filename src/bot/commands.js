@@ -1,6 +1,7 @@
 // TODO: should be renamed to states.js
 export default {
-    ERROR: 0,
+    ERROR: -1,
+    START: 0,
     HELP: 1,
     ECHO: 2,
     TOKEN: 3,

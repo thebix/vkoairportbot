@@ -3,7 +3,7 @@ import { Subject, Observable } from 'rxjs'
 import { log, logLevel } from '../logger'
 import Message, { CallbackQuery } from './message'
 
-const messageToUserOptions = (inlineButtons, editMessageId = undefined, editMessageChatId = undefined) => {
+const messageToUserOptions = (inlineButtons = undefined, replyKeyboard = undefined, editMessageId = undefined, editMessageChatId = undefined) => {
     const options = {
         message_id: editMessageId,
         chat_id: editMessageChatId,
@@ -16,6 +16,21 @@ const messageToUserOptions = (inlineButtons, editMessageId = undefined, editMess
                 callback_data: JSON.stringify(item.callbackData)
             }])
 
+    }
+    if (replyKeyboard && replyKeyboard.buttons && Array.isArray(replyKeyboard.buttons)) {
+        const {
+            buttons = [],
+            resizeKeyboard = false,
+            oneTimeKeyboard = false,
+            selective = false } = replyKeyboard
+
+        options.reply_markup.resize_keyboard = resizeKeyboard
+        options.reply_markup.one_time_keyboard = oneTimeKeyboard
+        options.reply_markup.selective = selective
+        options.reply_markup.keyboard =
+            buttons.map(item => [{
+                text: item.text
+            }])
     }
     return options
 }
@@ -55,14 +70,14 @@ export default class Telegram {
         return this.userActionsSubject.asObservable()
     }
     // TODO: rename to botMessage
-    messageToUser({ chatId, text, inlineButtons }) {
+    messageToUser({ chatId, text, inlineButtons, replyKeyboard }) {
         return Observable.fromPromise(this.bot.sendMessage(chatId, text,
-            messageToUserOptions(inlineButtons)))
+            messageToUserOptions(inlineButtons, replyKeyboard)))
     }
     // TODO: rename to botMessageEdit
     messageToUserEdit({ chatId, text, inlineButtons, messangerMessageIdToEdit }) {
         // TODO: chatId, messangerMessageIdToEdit is required params - add checks isNonBlank()
         return Observable.fromPromise(this.bot.editMessageText(text,
-            messageToUserOptions(inlineButtons, messangerMessageIdToEdit, chatId)))
+            messageToUserOptions(inlineButtons, undefined, messangerMessageIdToEdit, chatId)))
     }
 }

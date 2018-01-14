@@ -79,10 +79,25 @@ export class CallbackQuery {
 /*
  *  TO USER
  */
+// https://core.telegram.org/bots/api#inlinekeyboardmarkup
 export class InlineButton {
     constructor(text, callbackData) {
         this.text = text
         this.callbackData = callbackData
+    }
+}
+// https://core.telegram.org/bots/api#replykeyboardmarkups
+export class ReplyKeyboard {
+    constructor(buttons = [], resizeKeyboard = false, oneTimeKeyboard = false, selective = false) {
+        this.buttons = buttons
+        this.resizeKeyboard = resizeKeyboard
+        this.oneTimeKeyboard = oneTimeKeyboard
+        this.selective = selective
+    }
+}
+export class ReplyKeyboardButton {
+    constructor(text) {
+        this.text = text
     }
 }
 
@@ -92,12 +107,14 @@ export class MessageToUser {
     constructor(userId,
         chatId,
         text = '',
-        inlineButtons = undefined) {
+        inlineButtons = undefined,
+        replyKeyboard = undefined) {
         // TODO: add checks userId, chatId, text isNotBlank()
         this.userId = userId
         this.chatId = chatId
         this.text = text
         this.inlineButtons = inlineButtons
+        this.replyKeyboard = replyKeyboard
     }
 }
 export class MessageToUserEdit extends MessageToUser {

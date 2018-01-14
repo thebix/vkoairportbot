@@ -4,7 +4,7 @@
 */
 
 import { Observable } from 'rxjs/Observable'
-import { MessageToUser, InlineButton, MessageToUserEdit } from './message'
+import { MessageToUser, InlineButton, MessageToUserEdit, ReplyKeyboard, ReplyKeyboardButton } from './message'
 import commands from './commands'
 import storage from '../storage'
 // INFO: dateTimeString should be used from special datetime class
@@ -69,6 +69,13 @@ const help = (userId, chatId) => {
     // TODO: save the last command in storage
     return Observable.from([new MessageToUser(userId, chatId,
         'Помощь\nЗдесь вы можете узнать актуальное расписание вылета самолетов')])
+}
+
+const start = (userId, chatId) => {
+    lastCommands[`${userId}${chatId}`] = commands.START
+    // TODO: save the last command in storage
+    return Observable.from([new MessageToUser(userId, chatId,
+        'Старт')])
 }
 
 const flightCheckStart = (userId, chatId) =>
@@ -196,6 +203,8 @@ const mapMessageToHandler = message => {
     let messagesToUser
     if (!config.isProduction && !InputParser.isDeveloper(from)) {
         messagesToUser = botIsInDevelopmentToUser(from, chatId)
+    } else if (InputParser.isAskingForStart(text)) {
+        messagesToUser = start(from, chatId)
     } else if (InputParser.isFlightCheckStart(text)) {
         messagesToUser = flightCheckStart(from, chatId, text)
     } else if (InputParser.isFlightCheckFlightOrCityEntered(text, lastCommands[`${from}${chatId}`])) {
@@ -218,7 +227,7 @@ export const mapCallbackQueryToHandler = callbackQuery => {
     } else if (InputParser.isFlightCheckFoundFromMany(callbackCommand)) {
         messagesToUser = flightCheckFoundFromMany(from, chatId, data, id)
     } else {
-        log(`handlers.mapCallbackQueryToHandler: can't find handler for user action callback query. userId=${userId}, chatId=${chatId}, data=${JSON.stringify(data)}`, logLevel.ERROR)
+        log(`handlers.mapCallbackQueryToHandler: can't find handler for user action callback query. userId=${from}, chatId=${chatId}, data=${JSON.stringify(data)}`, logLevel.ERROR)
         messagesToUser = errorToUser(from, chatId)
     }
 
