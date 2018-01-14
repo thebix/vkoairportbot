@@ -37,7 +37,7 @@ const sendFoundFlightToUser = (userId, chatId, command, flight, messageToEditId)
                 return [new MessageToUser(userId, chatId, text,
                     [buttonSubscribeToFlight])]
             }
-            log(`handlers: update user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
+            log(`handlers.sendFoundFlightToUser: update user last command in storage error. ChatId: ${chatId}, userId: ${userId}, command: ${command}, flightId: ${flight.id}`, logLevel.ERROR)
             return errorToUser(userId, chatId)
         })
 }
@@ -56,7 +56,7 @@ const errorToUser = (userId, chatId) => {
 }
 
 const botIsInDevelopmentToUser = (userId, chatId) => {
-    log(`vkoBot.mapMessageToHandler: userId="${userId}" is not in token.developers array.`, logLevel.ERROR)
+    log(`handlers.botIsInDevelopmentToUser: userId="${userId}" is not in token.developers array.`, logLevel.ERROR)
     return Observable.from([new MessageToUser(userId, chatId,
         `В данный момент бот находится в режиме разработки. \nВаш идентификатор в мессенджере - "${userId}". Сообщите свой идентификатор по контактам в описании бота, чтобы Вас добавили в группу разработчиков`)])
 }
@@ -88,7 +88,7 @@ const flightCheckStart = (userId, chatId) =>
                 return [new MessageToUser(userId, chatId,
                     'Введите номер рейса или город назначения')]
             }
-            log(`handlers: update last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
+            log(`handlers.flightCheckStart: update last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
             return errorToUser(userId, chatId)
         })
 
