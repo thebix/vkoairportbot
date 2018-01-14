@@ -48,4 +48,8 @@ export default class InputParser {
         return command === commands.FLIGHT_SUBSCRIBED
             || command === commands.FLIGHT_UNSUBSCRIBED
     }
+    static isUserFlights(text) {
+        const pattern = /^\/My flights|Мои полёты/i
+        return text.match(pattern)
+    }
 }

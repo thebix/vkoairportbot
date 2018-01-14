@@ -1,6 +1,9 @@
 /*
- *  INFO:
+ * INFO:
  *      - every handler should return Observable.from([MessageToUser])
+ *
+ * TODO:
+ *      - ?remove lastCommand functionality and save to storage?
 */
 
 import { Observable } from 'rxjs/Observable'
@@ -14,16 +17,24 @@ import InputParser from './inputParser'
 import config from '../config'
 
 const lastCommands = {}
-const userFlights = {}
+const userFlightsSubscribed = {}
 
 /************
  * COMMON METHODS
  ************/
 const updateLastCommand = (userId, chatId, command) => storage.updateItem(`${userId}${chatId}`, 'lastCommand', command)
 const getFlightDetailsText = (flight) => `${flight.id}\n${flight.departureCity}-${flight.destinationCity}\nВремя посадки: ${dateTimeString(flight.boardingTime)}\nВремя вылета: ${dateTimeString(flight.depatureTime)}\nГейт: ${flight.gate}`
+const flightsInlineButtonsList = (flights = []) => flights && Array.isArray(flights)
+    ? flights
+        .map(flight => new InlineButton(`${flight.id}, гейт: ${flight.gate}`, {
+            flightId: flight.id,
+            cmd: commands.FLIGHT_CHECK_FOUND_FROM_MANY
+        }))
+    : []
+
 const sendFoundFlightToUser = (userId, chatId, command, flight, messageToEditId) => {
-    const currentUserFlights = Object.assign({}, userFlights[`${userId}${chatId}`])
-    currentUserFlights[flight.id] = flight
+    const currentUserFlightsSubscribed = Object.assign({}, userFlightsSubscribed[`${userId}${chatId}`])
+    currentUserFlightsSubscribed[flight.id] = flight
     return updateLastCommand(userId, chatId, command)
         .mergeMap(updateStorageResult => {
             if (updateStorageResult) {
@@ -112,11 +123,7 @@ const flightCheckFlightOrCityEntered = (userId, chatId, text) => {
                     if (updateStorageResult) {
                         lastCommands[`${userId}${chatId}`] = command
                         // TODO: split to several messages if flights length is too lagre
-                        const flights = flightsByCity
-                            .map(flight => new InlineButton(`${flight.id}, гейт: ${flight.gate}`, {
-                                flightId: flight.id,
-                                cmd: commands.FLIGHT_CHECK_FOUND_FROM_MANY
-                            }))
+                        const flights = flightsInlineButtonsList(flightsByCity)
                         return [new MessageToUser(userId, chatId, 'Найдены рейсы, выберите Ваш', flights)]
                     }
                     log(`handlers.flightCheckFlightOrCityEntered: update user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
@@ -129,6 +136,15 @@ const flightCheckFlightOrCityEntered = (userId, chatId, text) => {
     lastCommands[`${userId}${chatId}`] = commands.FLIGHT_CHECK_START
     return [new MessageToUser(userId, chatId,
         'По заданным критериям рейс не найден. Если вводили город, попробуйте ввести рейс и наоборот')]
+}
+const userFlights = (userId, chatId) => {
+    log(`handlers.userFlights(userId=${userId}, chatId=${chatId})`, logLevel.DEBUG)
+    // TODO: add lastCommand save and save to storage or remove lastCommand funcstionality
+    const userFlighsArray = userFlightsSubscribed[`${userId}${chatId}`]
+        ? Object.keys(userFlightsSubscribed[`${userId}${chatId}`]).map((key) => userFlightsSubscribed[`${userId}${chatId}`][key])
+        : []
+    const flights = flightsInlineButtonsList(userFlighsArray)
+    return [new MessageToUser(userId, chatId, flights.length > 0 ? 'Ваши полёты' : 'У вас нет подписок на полёты', flights)]
 }
 
 /*
@@ -160,20 +176,20 @@ const flightSubscriptionToggle = (userId, chatId, data, buttonMessageId) => {
 
     if (flightsById && flightsById.length > 0) {
         const flight = flightsById[0]
-        const currentUserFlights = Object.assign({}, userFlights[`${userId}${chatId}`])
-        const isUserSubscribes = !currentUserFlights[flight.id]
+        const currentUserFlightsSubscribed = Object.assign({}, userFlightsSubscribed[`${userId}${chatId}`])
+        const isUserSubscribes = !currentUserFlightsSubscribed[flight.id]
         const command = isUserSubscribes ? commands.FLIGHT_SUBSCRIBED : commands.FLIGHT_UNSUBSCRIBED
         return storage.updateItems(`${userId}${chatId}`, [
             { fieldName: 'lastCommand', item: command },
-            { fieldName: 'userFlights', item: currentUserFlights }])
+            { fieldName: 'userFlightsSubscribed', item: currentUserFlightsSubscribed }])
             .mergeMap(updateStorageResult => {
                 if (updateStorageResult) {
                     if (isUserSubscribes)
-                        currentUserFlights[flight.id] = flight
+                        currentUserFlightsSubscribed[flight.id] = flight
                     else
-                        delete currentUserFlights[flight.id]
+                        delete currentUserFlightsSubscribed[flight.id]
                     lastCommands[`${userId}${chatId}`] = command
-                    userFlights[`${userId}${chatId}`] = currentUserFlights
+                    userFlightsSubscribed[`${userId}${chatId}`] = currentUserFlightsSubscribed
 
                     const buttonToggleSubscriptionText = isUserSubscribes ? `Отписаться от рейса ${flight.id}` : `Подписаться на рейс ${flight.id}`
                     const buttonToggleSubscriptionCmd = isUserSubscribes ? commands.FLIGHT_UNSUBSCRIBED : commands.FLIGHT_SUBSCRIBED
@@ -184,7 +200,7 @@ const flightSubscriptionToggle = (userId, chatId, data, buttonMessageId) => {
                     return [new MessageToUser(userId, chatId, text,
                         [buttonToggleSubscription])]
                 }
-                log(`handlers.flightSubscriptionToggle: update userFlights or user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
+                log(`handlers.flightSubscriptionToggle: update userFlightsSubscribed or user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
                 return errorToUser(userId, chatId)
             })
     }
@@ -209,6 +225,8 @@ const mapMessageToHandler = message => {
         messagesToUser = start(from, chatId)
     } else if (InputParser.isHelp(text))
         messagesToUser = help(from, chatId)
+    else if (InputParser.isUserFlights(text))
+        messagesToUser = userFlights(from, chatId)
     else if (InputParser.isFlightCheckStart(text)) {
         messagesToUser = flightCheckStart(from, chatId, text)
     } else if (InputParser.isFlightCheckFlightOrCityEntered(text, lastCommands[`${from}${chatId}`])) {
