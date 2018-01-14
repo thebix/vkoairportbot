@@ -27,21 +27,21 @@ export default class InputParser {
         const pattern = /^\/token/i
         return text.match(pattern)
     }
-    static isFlightCheckStart(text = '', callbackCommand = undefined) {
+    static isFlightSearchStart(text = '', callbackCommand = undefined) {
         // TODO: remove |йцу|qwe
         const pattern = /^\/flight|рейс|йцу|qwe|поиск рейса/i
         return callbackCommand === commands.FLIGHT_SEARCH_START
             || (text || '').match(pattern)
     }
     // TODO: 'text' not needed, remove
-    static isFlightCheckFlightOrCityEntered(text, prevCommand) {
+    static isFlightSearchShowListByInput(text, prevCommand) {
         return prevCommand === commands.FLIGHT_SEARCH_START
     }
 
     /*
      * CallbackQueries
      */
-    static isFlightCheckFoundFromMany(callbackCommand) {
+    static isFlightSearchSelect(callbackCommand) {
         return callbackCommand === commands.FLIGHT_SEARCH_SELECT
     }
     static isFlightSubscriptionToggle(callbackCommand) {

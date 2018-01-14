@@ -40,7 +40,6 @@ const flightsInlineButtonsList = (flights = []) => flights && Array.isArray(flig
             cmd: commands.FLIGHT_SEARCH_SELECT
         }))
     : []
-
 const sendFoundFlightToUser = (userId, chatId, command, flight, messageToEditId) => {
     const currentUserFlightsSubscribed = Object.assign({}, userFlightsSubscribed[`${userId}${chatId}`])
     const isUserAlreadySubscribed = !!currentUserFlightsSubscribed[flight.id]
@@ -69,7 +68,7 @@ const sendFoundFlightToUser = (userId, chatId, command, flight, messageToEditId)
 /************
  * HANDLERS
  ************/
-// TODO: rename handlers as InputParsers as commands
+
 /*
  * ERRORS
  */
@@ -104,7 +103,7 @@ const help = (userId, chatId) => {
         'Помощь\nЗдесь Вы можете узнать актуальную информацию о предстоящем полете и подписаться на оповещения о нем.')])
 }
 
-const flightCheckStart = (userId, chatId) =>
+const flightSearchStart = (userId, chatId) =>
     updateLastCommand(userId, chatId, commands.FLIGHT_SEARCH_START)
         .mergeMap(updateResult => {
             if (updateResult === true) {
@@ -112,12 +111,12 @@ const flightCheckStart = (userId, chatId) =>
                 return [new MessageToUser(userId, chatId,
                     'Введите номер рейса или город назначения')]
             }
-            log(`handlers.flightCheckStart: update last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
+            log(`handlers.flightSearchStart: update last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
             return errorToUser(userId, chatId)
         })
 
-const flightCheckFlightOrCityEntered = (userId, chatId, text) => {
-    log(`handlers.flightCheckFlightOrCityEntered(userId=${userId}, chatId=${chatId}, text='${text}')`, logLevel.DEBUG)
+const flightSearchShowListByInput = (userId, chatId, text) => {
+    log(`handlers.flightSearchShowListByInput(userId=${userId}, chatId=${chatId}, text='${text}')`, logLevel.DEBUG)
     // check by flight number
     const flightNumber = text.replace(/\s/g, '').toLowerCase()
     const flightsByNumber = token.flights.filter(item => item.flightNumber.replace(/\s/g, '').toLowerCase().indexOf(flightNumber) !== -1)
@@ -139,7 +138,7 @@ const flightCheckFlightOrCityEntered = (userId, chatId, text) => {
                         const flights = flightsInlineButtonsList(flightsByCity)
                         return [new MessageToUser(userId, chatId, 'Найдены рейсы, выберите Ваш', flights)]
                     }
-                    log(`handlers.flightCheckFlightOrCityEntered: update user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
+                    log(`handlers.flightSearchShowListByInput: update user last command in storage error. ChatId: ${chatId}, userId: ${userId}`, logLevel.ERROR)
                     return errorToUser(userId, chatId)
                 })
     }
@@ -150,6 +149,7 @@ const flightCheckFlightOrCityEntered = (userId, chatId, text) => {
     return [new MessageToUser(userId, chatId,
         'По заданным критериям рейс не найден. Если вводили город, попробуйте ввести рейс и наоборот')]
 }
+
 const userFlights = (userId, chatId) => {
     log(`handlers.userFlights(userId=${userId}, chatId=${chatId})`, logLevel.DEBUG)
     // TODO: add lastCommand save and save to storage or remove lastCommand functionality
@@ -165,8 +165,8 @@ const userFlights = (userId, chatId) => {
 /*
  * BOT CALLBACK_QUERY HELPERS
  */
-const flightCheckFoundFromMany = (userId, chatId, data, editMessageId) => {
-    log(`handlers.flightCheckFoundFromMany(userId=${userId}, chatId=${chatId}, editMessageId=${editMessageId}, data='${JSON.stringify(data)}')`, logLevel.DEBUG)
+const flightSearchSelect = (userId, chatId, data, editMessageId) => {
+    log(`handlers.flightSearchSelect(userId=${userId}, chatId=${chatId}, editMessageId=${editMessageId}, data='${JSON.stringify(data)}')`, logLevel.DEBUG)
     let { flightId } = data
 
     // check by flight id
@@ -176,10 +176,11 @@ const flightCheckFoundFromMany = (userId, chatId, data, editMessageId) => {
         return sendFoundFlightToUser(userId, chatId, commands.FLIGHT_SEARCH_SELECT, flightsById[0], editMessageId)
     }
     lastCommands[`${userId}${chatId}`] = commands.ERROR
-    log(`handlers.flightCheckFoundFromMany: user can't select flight from list. UserId=${userId}, chatId=${chatId}, flightId=${flightId}`, logLevel.ERROR)
+    log(`handlers.flightSearchSelect: user can't select flight from list. UserId=${userId}, chatId=${chatId}, flightId=${flightId}`, logLevel.ERROR)
     return [new MessageToUser(userId, chatId,
         'При выборе рейса возникла проблема. Пожалуйста, начните с начала')]
 }
+
 const flightSubscriptionToggle = (userId, chatId, data, buttonMessageId) => {
     log(`handlers.flightSubscriptionToggle(userId=${userId}, chatId=${chatId}, data='${JSON.stringify(data)}'), buttonMessageId=${buttonMessageId}`, logLevel.DEBUG)
     let { flightId, cmd: buttonCmd } = data
@@ -232,7 +233,6 @@ const flightSubscriptionToggle = (userId, chatId, data, buttonMessageId) => {
 /*
  * EXPORTS
  */
-
 const mapMessageToHandler = message => {
     const { text, from, chat } = message
     const chatId = chat ? chat.id : from
@@ -246,10 +246,10 @@ const mapMessageToHandler = message => {
         messagesToUser = help(from, chatId)
     else if (InputParser.isUserFlights(text))
         messagesToUser = userFlights(from, chatId)
-    else if (InputParser.isFlightCheckStart(text)) {
-        messagesToUser = flightCheckStart(from, chatId)
-    } else if (InputParser.isFlightCheckFlightOrCityEntered(text, lastCommands[`${from}${chatId}`])) {
-        messagesToUser = flightCheckFlightOrCityEntered(from, chatId, text)
+    else if (InputParser.isFlightSearchStart(text)) {
+        messagesToUser = flightSearchStart(from, chatId)
+    } else if (InputParser.isFlightSearchShowListByInput(text, lastCommands[`${from}${chatId}`])) {
+        messagesToUser = flightSearchShowListByInput(from, chatId, text)
     }
 
     if (!messagesToUser) {
@@ -266,12 +266,12 @@ export const mapCallbackQueryToHandler = callbackQuery => {
     const chatId = chat ? chat.id : from
     const callbackCommand = data.cmd || undefined
     let messagesToUser
-    if (InputParser.isFlightCheckStart(undefined, callbackCommand)) {
-        messagesToUser = flightCheckStart(from, chatId)
+    if (InputParser.isFlightSearchStart(undefined, callbackCommand)) {
+        messagesToUser = flightSearchStart(from, chatId)
     } else if (InputParser.isFlightSubscriptionToggle(callbackCommand)) {
         messagesToUser = flightSubscriptionToggle(from, chatId, data, id)
-    } else if (InputParser.isFlightCheckFoundFromMany(callbackCommand)) {
-        messagesToUser = flightCheckFoundFromMany(from, chatId, data, id)
+    } else if (InputParser.isFlightSearchSelect(callbackCommand)) {
+        messagesToUser = flightSearchSelect(from, chatId, data, id)
     } else {
         log(`handlers.mapCallbackQueryToHandler: can't find handler for user action callback query. userId=${from}, chatId=${chatId}, data=${JSON.stringify(data)}`, logLevel.ERROR)
         messagesToUser = errorToUser(from, chatId)
