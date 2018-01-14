@@ -68,7 +68,6 @@ const sendFoundFlightToUser = (userId, chatId, command, flight, messageToEditId)
 /************
  * HANDLERS
  ************/
-
 /*
  * ERRORS
  */
@@ -91,14 +90,14 @@ const start = (userId, chatId) => {
     lastCommands[`${userId}${chatId}`] = commands.START
     // predefined reply buttons
     const keyboard = new ReplyKeyboard([new ReplyKeyboardButton('/Поиск рейса'), new ReplyKeyboardButton('/Мои полёты'), new ReplyKeyboardButton('/Помощь')], true, true)
-    // TODO: save the last command in storage
+    // TODO: save the last command in storage or remove lastCommand functionality
     return Observable.from([new MessageToUser(userId, chatId,
         'Вас приветствует VkoAirportBot!\nЗдесь можно посмотреть информацию о предстоящем рейсе и подписаться на оповещения о нем.\nДля свазяи с администрацией бота используйте контакты из описания', undefined, keyboard)])
 }
 
 const help = (userId, chatId) => {
     lastCommands[`${userId}${chatId}`] = commands.HELP
-    // TODO: save the last command in storage
+    // TODO: save the last command in storage or remove lastCommand functionality
     return Observable.from([new MessageToUser(userId, chatId,
         'Помощь\nЗдесь Вы можете узнать актуальную информацию о предстоящем полете и подписаться на оповещения о нем.')])
 }
@@ -134,7 +133,7 @@ const flightSearchShowListByInput = (userId, chatId, text) => {
                 .mergeMap(updateStorageResult => {
                     if (updateStorageResult) {
                         lastCommands[`${userId}${chatId}`] = command
-                        // TODO: split to several messages if flights length is too lagre
+                        // INFO: further improvement - split to several messages if flights length is too large
                         const flights = flightsInlineButtonsList(flightsByCity)
                         return [new MessageToUser(userId, chatId, 'Найдены рейсы, выберите Ваш', flights)]
                     }
@@ -248,7 +247,7 @@ const mapMessageToHandler = message => {
         messagesToUser = userFlights(from, chatId)
     else if (InputParser.isFlightSearchStart(text)) {
         messagesToUser = flightSearchStart(from, chatId)
-    } else if (InputParser.isFlightSearchShowListByInput(text, lastCommands[`${from}${chatId}`])) {
+    } else if (InputParser.isFlightSearchShowListByInput(lastCommands[`${from}${chatId}`])) {
         messagesToUser = flightSearchShowListByInput(from, chatId, text)
     }
 

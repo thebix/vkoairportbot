@@ -1,8 +1,8 @@
 import token from '../token'
 import commands from './commands'
+import config from '../config'
 
 export default class InputParser {
-    // INFO: ?move to another class?
     static isDeveloper(id) {
         return token.developers
             && token.developers.length > 0
@@ -28,13 +28,14 @@ export default class InputParser {
         return text.match(pattern)
     }
     static isFlightSearchStart(text = '', callbackCommand = undefined) {
-        // TODO: remove |йцу|qwe
-        const pattern = /^\/flight|рейс|йцу|qwe|поиск рейса/i
+        const pattern = config.isProduction ?
+            /^\/flight|рейс|поиск рейса/i
+            : /^\/flight|рейс|поиск рейса|йцу|qwe/i
+
         return callbackCommand === commands.FLIGHT_SEARCH_START
             || (text || '').match(pattern)
     }
-    // TODO: 'text' not needed, remove
-    static isFlightSearchShowListByInput(text, prevCommand) {
+    static isFlightSearchShowListByInput(prevCommand) {
         return prevCommand === commands.FLIGHT_SEARCH_START
     }
 
