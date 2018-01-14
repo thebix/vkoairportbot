@@ -10,8 +10,7 @@ import { Observable } from 'rxjs/Observable'
 import { MessageToUser, InlineButton, MessageToUserEdit, ReplyKeyboard, ReplyKeyboardButton } from './message'
 import commands from './commands'
 import storage from '../storage'
-// INFO: dateTimeString should be used from special datetime class
-import { log, logLevel, dateTimeString } from '../logger'
+import { log, logLevel } from '../logger'
 import token from '../token'
 import InputParser from './inputParser'
 import config from '../config'
@@ -22,11 +21,22 @@ const userFlightsSubscribed = {}
 /************
  * COMMON METHODS
  ************/
+export const dateTimeString = (date = new Date()) => {
+    var options = {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit',
+        hour12: false,
+        timeZone: 'Europe/Moscow'
+    }
+    return new Intl.DateTimeFormat('ru-EN', options).format(date)
+}
+
+// `${date.toLocaleDateString()} ${`0${date.getHours()}`.slice(-2)}:${`0${date.getMinutes()}`.slice(-2)}:${`0${date.getSeconds()}`.slice(-2)}`
 const updateLastCommand = (userId, chatId, command) => storage.updateItem(`${userId}${chatId}`, 'lastCommand', command)
 const getFlightDetailsText = (flight) => `${flight.id}\n${flight.departureCity}-${flight.destinationCity}\nВремя регистрации: ${dateTimeString(flight.registartionTime)}\nВремя посадки: ${dateTimeString(flight.boardingTime)}\nВремя вылета: ${dateTimeString(flight.depatureTime)}\nГейт: ${flight.gate}`
 const flightsInlineButtonsList = (flights = []) => flights && Array.isArray(flights)
     ? flights
-        .map(flight => new InlineButton(`${flight.id}, гейт: ${flight.gate}`, {
+        .map(flight => new InlineButton(`${flight.id}, вылет: ${dateTimeString(flight.depatureTime)}`, {
             flightId: flight.id,
             cmd: commands.FLIGHT_CHECK_FOUND_FROM_MANY
         }))
@@ -40,7 +50,6 @@ const sendFoundFlightToUser = (userId, chatId, command, flight, messageToEditId)
         .mergeMap(updateStorageResult => {
             if (updateStorageResult) {
                 lastCommands[`${userId}${chatId}`] = command
-                // TODO: if user has already subscribed to flight - show it as subscribed (look at the method flightSubscribed())
                 const buttonToggleSubscriptionText = isUserAlreadySubscribed ? `Отписаться от рейса ${flight.id}` : `Подписаться на рейс ${flight.id}`
                 const buttonToggleSubscriptionCmd = isUserAlreadySubscribed ? commands.FLIGHT_UNSUBSCRIBED : commands.FLIGHT_SUBSCRIBED
                 const buttonToggleSubscription = new InlineButton(buttonToggleSubscriptionText, {
