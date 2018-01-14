@@ -30,24 +30,23 @@ export default class InputParser {
     static isFlightCheckStart(text = '', callbackCommand = undefined) {
         // TODO: remove |йцу|qwe
         const pattern = /^\/flight|рейс|йцу|qwe|поиск рейса/i
-        return callbackCommand === commands.FLIGHT_CHECK_START
+        return callbackCommand === commands.FLIGHT_SEARCH_START
             || (text || '').match(pattern)
     }
     // TODO: 'text' not needed, remove
     static isFlightCheckFlightOrCityEntered(text, prevCommand) {
-        return prevCommand === commands.FLIGHT_CHECK_START
+        return prevCommand === commands.FLIGHT_SEARCH_START
     }
 
     /*
      * CallbackQueries
      */
-    static isFlightCheckFoundFromMany(command) {
-        return command === commands.FLIGHT_CHECK_FOUND_FROM_MANY
-            || command === commands.FLIGHT_CHECK_FOUND_BY_FLIGHT
+    static isFlightCheckFoundFromMany(callbackCommand) {
+        return callbackCommand === commands.FLIGHT_SEARCH_SELECT
     }
-    static isFlightSubscriptionToggle(command) {
-        return command === commands.FLIGHT_SUBSCRIBED
-            || command === commands.FLIGHT_UNSUBSCRIBED
+    static isFlightSubscriptionToggle(callbackCommand) {
+        return callbackCommand === commands.FLIGHT_SUBSCRIBE
+            || callbackCommand === commands.FLIGHT_UNSUBSCRIBE
     }
     static isUserFlights(text) {
         const pattern = /^\/My flights|Мои полёты/i
