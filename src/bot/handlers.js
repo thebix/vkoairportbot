@@ -102,7 +102,7 @@ const help = (userId, chatId) => {
     lastCommands[`${userId}${chatId}`] = commands.HELP
     // TODO: save the last command in storage
     return Observable.from([new MessageToUser(userId, chatId,
-        'Помощь\nЗдесь вы можете узнать актуальное расписание вылета самолетов')])
+        'Помощь\nЗдесь Вы можете узнать актуальную информацию о предстоящем полете и подписаться на оповещения о нем.')])
 }
 
 const flightCheckStart = (userId, chatId) =>
@@ -121,7 +121,7 @@ const flightCheckFlightOrCityEntered = (userId, chatId, text) => {
     log(`handlers.flightCheckFlightOrCityEntered(userId=${userId}, chatId=${chatId}, text='${text}')`, logLevel.DEBUG)
     // check by flight number
     const flightId = text.replace(/\s/g, '').toLowerCase()
-    const flightsById = token.flights.filter(item => item.id.replace(/\s/g, '').toLowerCase() === flightId)
+    const flightsById = token.flights.filter(item => item.id.replace(/\s/g, '').toLowerCase().indexOf(flightId) !== -1)
     let flight
     // TODO: add flight.flight, change here to flight.flight usage since id shoould be unique but flights repeats every day
     if (flightsById && flightsById.length > 0)
