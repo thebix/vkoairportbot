@@ -31,7 +31,6 @@ export const dateTimeString = (date = new Date()) => {
     return new Intl.DateTimeFormat('ru-RU', options).format(date)
 }
 
-// `${date.toLocaleDateString()} ${`0${date.getHours()}`.slice(-2)}:${`0${date.getMinutes()}`.slice(-2)}:${`0${date.getSeconds()}`.slice(-2)}`
 const updateLastCommand = (userId, chatId, command) => storage.updateItem(`${userId}${chatId}`, 'lastCommand', command)
 const getFlightDetailsText = (flight) => `${flight.id}\n${flight.departureCity}-${flight.destinationCity}\nВремя регистрации: ${dateTimeString(flight.registartionTime)}\nВремя посадки: ${dateTimeString(flight.boardingTime)}\nВремя вылета: ${dateTimeString(flight.depatureTime)}\nГейт: ${flight.gate}`
 const flightsInlineButtonsList = (flights = []) => flights && Array.isArray(flights)
@@ -90,20 +89,20 @@ const botIsInDevelopmentToUser = (userId, chatId) => {
 /*
  * USER COMMAND HELPERS
  */
+const start = (userId, chatId) => {
+    lastCommands[`${userId}${chatId}`] = commands.START
+    // predefined reply buttons
+    const keyboard = new ReplyKeyboard([new ReplyKeyboardButton('/Поиск рейса'), new ReplyKeyboardButton('/Мои полёты'), new ReplyKeyboardButton('/Помощь')], true, true)
+    // TODO: save the last command in storage
+    return Observable.from([new MessageToUser(userId, chatId,
+        'Вас приветствует VkoAirportBot!\nЗдесь можно посмотреть информацию о предстоящем рейсе и подписаться на оповещения о нем.\nДля свазяи с администрацией бота используйте контакты из описания', undefined, keyboard)])
+}
+
 const help = (userId, chatId) => {
     lastCommands[`${userId}${chatId}`] = commands.HELP
     // TODO: save the last command in storage
     return Observable.from([new MessageToUser(userId, chatId,
         'Помощь\nЗдесь вы можете узнать актуальное расписание вылета самолетов')])
-}
-
-const start = (userId, chatId) => {
-    lastCommands[`${userId}${chatId}`] = commands.START
-    // predefined reply buttons
-    const keyboard = new ReplyKeyboard([new ReplyKeyboardButton('/Мои полёты'), new ReplyKeyboardButton('/Помощь')], true, true)
-    // TODO: save the last command in storage
-    return Observable.from([new MessageToUser(userId, chatId,
-        'Вас приветствует VkoAirportBot!\nЗдесь можно посмотреть информацию о предстоящем рейсе и подписаться на оповещения о нем.\nДля свазяи с администрацией бота используйте контакты из описания', undefined, keyboard)])
 }
 
 const flightCheckStart = (userId, chatId) =>
@@ -159,7 +158,9 @@ const userFlights = (userId, chatId) => {
         ? Object.keys(userFlightsSubscribed[`${userId}${chatId}`]).map((key) => userFlightsSubscribed[`${userId}${chatId}`][key])
         : []
     const flights = flightsInlineButtonsList(userFlighsArray)
-    return [new MessageToUser(userId, chatId, flights.length > 0 ? 'Ваши полёты' : 'У вас нет подписок на полёты', flights)]
+    return [new MessageToUser(userId, chatId,
+        flights.length > 0 ? 'Ваши полёты' : 'У Вас нет подписок на полёты',
+        flights.length > 0 ? flights : [new InlineButton('Поиск рейса', { cmd: commands.FLIGHT_CHECK_START })])]
 }
 
 /*
@@ -252,7 +253,7 @@ const mapMessageToHandler = message => {
     else if (InputParser.isUserFlights(text))
         messagesToUser = userFlights(from, chatId)
     else if (InputParser.isFlightCheckStart(text)) {
-        messagesToUser = flightCheckStart(from, chatId, text)
+        messagesToUser = flightCheckStart(from, chatId)
     } else if (InputParser.isFlightCheckFlightOrCityEntered(text, lastCommands[`${from}${chatId}`])) {
         messagesToUser = flightCheckFlightOrCityEntered(from, chatId, text)
     }
@@ -271,7 +272,9 @@ export const mapCallbackQueryToHandler = callbackQuery => {
     const chatId = chat ? chat.id : from
     const callbackCommand = data.cmd || undefined
     let messagesToUser
-    if (InputParser.isFlightSubscriptionToggle(callbackCommand)) {
+    if (InputParser.isFlightCheckStart(undefined, callbackCommand)) {
+        messagesToUser = flightCheckStart(from, chatId)
+    } else if (InputParser.isFlightSubscriptionToggle(callbackCommand)) {
         messagesToUser = flightSubscriptionToggle(from, chatId, data, id)
     } else if (InputParser.isFlightCheckFoundFromMany(callbackCommand)) {
         messagesToUser = flightCheckFoundFromMany(from, chatId, data, id)

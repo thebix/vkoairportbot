@@ -27,10 +27,11 @@ export default class InputParser {
         const pattern = /^\/token/i
         return text.match(pattern)
     }
-    static isFlightCheckStart(text) {
+    static isFlightCheckStart(text = '', callbackCommand = undefined) {
         // TODO: remove |йцу|qwe
-        const pattern = /^\/flight|рейс|йцу|qwe/i
-        return text.match(pattern)
+        const pattern = /^\/flight|рейс|йцу|qwe|поиск рейса/i
+        return callbackCommand === commands.FLIGHT_CHECK_START
+            || (text || '').match(pattern)
     }
     // TODO: 'text' not needed, remove
     static isFlightCheckFlightOrCityEntered(text, prevCommand) {
