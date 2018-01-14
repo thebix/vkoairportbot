@@ -28,7 +28,7 @@ export const dateTimeString = (date = new Date()) => {
         hour12: false,
         timeZone: 'Europe/Moscow'
     }
-    return new Intl.DateTimeFormat('ru-EN', options).format(date)
+    return new Intl.DateTimeFormat('ru-RU', options).format(date)
 }
 
 // `${date.toLocaleDateString()} ${`0${date.getHours()}`.slice(-2)}:${`0${date.getMinutes()}`.slice(-2)}:${`0${date.getSeconds()}`.slice(-2)}`
@@ -36,7 +36,7 @@ const updateLastCommand = (userId, chatId, command) => storage.updateItem(`${use
 const getFlightDetailsText = (flight) => `${flight.id}\n${flight.departureCity}-${flight.destinationCity}\nВремя регистрации: ${dateTimeString(flight.registartionTime)}\nВремя посадки: ${dateTimeString(flight.boardingTime)}\nВремя вылета: ${dateTimeString(flight.depatureTime)}\nГейт: ${flight.gate}`
 const flightsInlineButtonsList = (flights = []) => flights && Array.isArray(flights)
     ? flights
-        .map(flight => new InlineButton(`${flight.id}, вылет: ${dateTimeString(flight.depatureTime)}`, {
+        .map(flight => new InlineButton(`${flight.id} в ${flight.destinationCity}\nвылет: ${dateTimeString(flight.depatureTime)}`, {
             flightId: flight.id,
             cmd: commands.FLIGHT_CHECK_FOUND_FROM_MANY
         }))
@@ -197,10 +197,19 @@ const flightSubscriptionToggle = (userId, chatId, data, buttonMessageId) => {
             { fieldName: 'userFlightsSubscribed', item: currentUserFlightsSubscribed }])
             .mergeMap(updateStorageResult => {
                 if (updateStorageResult) {
-                    if (isUserAlreadySubscribed && buttonCmd === commands.FLIGHT_UNSUBSCRIBED)
+                    let userNotificationText
+                    if (isUserAlreadySubscribed && buttonCmd === commands.FLIGHT_UNSUBSCRIBED) {
                         delete currentUserFlightsSubscribed[flight.id]
-                    else if (!isUserAlreadySubscribed && buttonCmd === commands.FLIGHT_SUBSCRIBED)
+                        // TODO: change to flight.flight
+                        userNotificationText = `Вы отписались от рейса ${flight.id}`
+                    }
+                    else if (!isUserAlreadySubscribed && buttonCmd === commands.FLIGHT_SUBSCRIBED) {
                         currentUserFlightsSubscribed[flight.id] = flight
+                        // TODO: change to flight.flight
+                        userNotificationText = `Вы подписались на рейс ${flight.id}`
+                    } else
+                        // TODO: change to flight.flight
+                        userNotificationText = isUserAlreadySubscribed ? `Вы уже подписаны на рейс ${flight.id}` : `Вы уже отписаны от рейса ${flight.id}`
 
                     lastCommands[`${userId}${chatId}`] = buttonCmd
                     userFlightsSubscribed[`${userId}${chatId}`] = currentUserFlightsSubscribed
@@ -210,7 +219,8 @@ const flightSubscriptionToggle = (userId, chatId, data, buttonMessageId) => {
                     const buttonToggleSubscription = new InlineButton(buttonToggleSubscriptionText, { flightId: flight.id, cmd: buttonToggleSubscriptionCmd })
                     const text = buttonCmd === commands.FLIGHT_SUBSCRIBED ? `Вы подписаны на рейс\n${getFlightDetailsText(flight)}` : `Найденный рейс\n${getFlightDetailsText(flight)}`
                     if (buttonMessageId)
-                        return [new MessageToUserEdit(buttonMessageId, chatId, text, [buttonToggleSubscription])]
+                        return [new MessageToUserEdit(buttonMessageId, chatId, text, [buttonToggleSubscription]),
+                        new MessageToUser(userId, chatId, userNotificationText)]
                     return [new MessageToUser(userId, chatId, text,
                         [buttonToggleSubscription])]
                 }
