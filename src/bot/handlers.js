@@ -73,9 +73,11 @@ const help = (userId, chatId) => {
 
 const start = (userId, chatId) => {
     lastCommands[`${userId}${chatId}`] = commands.START
+    // predefined reply buttons
+    const keyboard = new ReplyKeyboard([new ReplyKeyboardButton('/Мои полёты'), new ReplyKeyboardButton('/Помощь')], true, true)
     // TODO: save the last command in storage
     return Observable.from([new MessageToUser(userId, chatId,
-        'Старт')])
+        'Вас приветствует VkoAirportBot!\nЗдесь можно посмотреть информацию о предстоящем рейсе и подписаться на оповещения о нем.\nДля свазяи с администрацией бота используйте контакты из описания', undefined, keyboard)])
 }
 
 const flightCheckStart = (userId, chatId) =>
@@ -203,14 +205,19 @@ const mapMessageToHandler = message => {
     let messagesToUser
     if (!config.isProduction && !InputParser.isDeveloper(from)) {
         messagesToUser = botIsInDevelopmentToUser(from, chatId)
-    } else if (InputParser.isAskingForStart(text)) {
+    } else if (InputParser.isStart(text)) {
         messagesToUser = start(from, chatId)
-    } else if (InputParser.isFlightCheckStart(text)) {
+    } else if (InputParser.isHelp(text))
+        messagesToUser = help(from, chatId)
+    else if (InputParser.isFlightCheckStart(text)) {
         messagesToUser = flightCheckStart(from, chatId, text)
     } else if (InputParser.isFlightCheckFlightOrCityEntered(text, lastCommands[`${from}${chatId}`])) {
         messagesToUser = flightCheckFlightOrCityEntered(from, chatId, text)
-    } else
+    }
+
+    if (!messagesToUser) {
         messagesToUser = help(from, chatId)
+    }
 
     return Observable.from(messagesToUser)
         .concatMap(msgToUser => Observable.of(msgToUser).delay(10))

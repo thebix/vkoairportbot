@@ -11,15 +11,15 @@ export default class InputParser {
     static isAskingForEcho() {
         return true
     }
-    static isAskingForStart(text) {
+    static isStart(text) {
         const pattern = /^\/start|старт/i
         return text.match(pattern)
     }
-    static isAskingForHelp(text) {
+    static isHelp(text) {
         const pattern = /^\/help|помощь/i
         return text.match(pattern)
     }
-    static isAskingForStart(text) {
+    static isStart(text) {
         const pattern = /^\/start/i
         return text.match(pattern)
     }
