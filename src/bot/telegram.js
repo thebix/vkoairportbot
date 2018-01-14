@@ -1,7 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api'
 import { Subject, Observable } from 'rxjs'
 import { log, logLevel } from '../logger'
-import Message, { CallbackQuery } from './message'
+import UserMessage, { UserAction } from './message'
 
 const messageToUserOptions = (inlineButtons = undefined, replyKeyboard = undefined, editMessageId = undefined, editMessageChatId = undefined) => {
     const options = {
@@ -54,11 +54,11 @@ export default class Telegram {
             return
         }
         this.bot.on('text', msg => {
-            this.userTextSubject.next(new Message(Message.mapTelegramMessage(msg)))
+            this.userTextSubject.next(new UserMessage(UserMessage.mapTelegramMessage(msg)))
         })
-        this.bot.on('callback_query', callbackQuery => {
-            this.bot.answerCallbackQuery(callbackQuery.id, 'Команда получена', false);
-            this.userActionsSubject.next(new CallbackQuery(CallbackQuery.mapTelegramCallbackQuery(callbackQuery)))
+        this.bot.on('callback_query', userAction => {
+            this.bot.answerCallbackQuery(userAction.id, 'Команда получена', false);
+            this.userActionsSubject.next(new UserAction(UserAction.mapTelegramUserAction(userAction)))
         })
     }
     userText() {

@@ -2,7 +2,7 @@ import { log, logLevel } from '../logger'
 import config from '../config'
 import token from '../token'
 import Telegram from './telegram'
-import mapMessageToHandler, { mapCallbackQueryToHandler } from './handlers'
+import mapMessageToHandler, { mapUserActionToHandler } from './handlers'
 
 const startVkoBot = () => {
     log('vkoBot.startVkoBot()', logLevel.DEBUG)
@@ -27,7 +27,7 @@ const startVkoBot = () => {
         // TODO: proper observeOn / subscribeOn
         // .observeOn(Scheduler.async)
         // .subscribeOn(Scheduler.async)
-        .mergeMap(mapCallbackQueryToHandler)
+        .mergeMap(mapUserActionToHandler)
         .mergeMap(message => {
             return message.messangerMessageIdToEdit
                 ? telegram.messageToUserEdit(message)

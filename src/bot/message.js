@@ -3,7 +3,7 @@
 /*
  *   FROM USER
  */
-export default class Message {
+export default class UserMessage {
     constructor(msg) {
         this.id = msg.id
         this.from = msg.from
@@ -34,9 +34,9 @@ export default class Message {
             }
         }
     }
-    static mapTelegramCallbackQueryToMessage(callbackQuery) {
+    static mapTelegramUserActionToMessage(userAction) {
         // INFO: message.user = bot, from = user
-        const { message, from } = callbackQuery
+        const { message, from } = userAction
         return {
             id: message.message_id,
             from: from.id,
@@ -61,17 +61,17 @@ export default class Message {
 }
 
 // TODO: ?rename to userActions?
-export class CallbackQuery {
+export class UserAction {
     constructor({ data, message }) {
         this.data = data
         this.message = message
     }
 
-    static mapTelegramCallbackQuery(callbackQuery) {
-        const { data, message } = callbackQuery
+    static mapTelegramUserAction(userAction) {
+        const { data, message } = userAction
         return {
             data: data ? JSON.parse(data) : {},
-            message: new Message(Message.mapTelegramCallbackQueryToMessage(callbackQuery))
+            message: new UserMessage(UserMessage.mapTelegramUserActionToMessage(userAction))
         }
     }
 }
@@ -102,7 +102,7 @@ export class ReplyKeyboardButton {
 }
 
 // send or edit message from bot to user
-export class MessageToUser {
+export class BotMessage {
     // INFO: userId, chatId, text - reqired params
     constructor(userId,
         chatId,
@@ -117,7 +117,7 @@ export class MessageToUser {
         this.replyKeyboard = replyKeyboard
     }
 }
-export class MessageToUserEdit extends MessageToUser {
+export class BotMessageEdit extends BotMessage {
     // TODO: rename messangerMessageIdToEdit to messageIdToEdit
     constructor(messangerMessageIdToEdit, chatId, text, inlineButtons) {
         // TODO: messangerMessageIdToEdit check isNonBlank
