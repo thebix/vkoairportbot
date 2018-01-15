@@ -19,10 +19,6 @@ export default class InputParser {
         const pattern = /^\/help|помощь/i
         return text.match(pattern)
     }
-    static isStart(text) {
-        const pattern = /^\/start/i
-        return text.match(pattern)
-    }
     static isAskingForInitToken(text) {
         const pattern = /^\/token/i
         return text.match(pattern)
@@ -40,7 +36,7 @@ export default class InputParser {
     }
 
     /*
-     * CallbackQueries
+     * UserActions
      */
     static isFlightSearchSelect(callbackCommand) {
         return callbackCommand === commands.FLIGHT_SEARCH_SELECT

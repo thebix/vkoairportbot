@@ -15,7 +15,6 @@ const messageToUserOptions = (inlineButtons = undefined, replyKeyboard = undefin
                 text: item.text,
                 callback_data: JSON.stringify(item.callbackData)
             }])
-
     }
     if (replyKeyboard && replyKeyboard.buttons && Array.isArray(replyKeyboard.buttons)) {
         const {

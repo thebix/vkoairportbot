@@ -68,7 +68,7 @@ export class UserAction {
     }
 
     static mapTelegramUserAction(userAction) {
-        const { data, message } = userAction
+        const { data } = userAction
         return {
             data: data ? JSON.parse(data) : {},
             message: new UserMessage(UserMessage.mapTelegramUserActionToMessage(userAction))
